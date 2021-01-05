@@ -22,11 +22,6 @@ import { cacheToLocalStorage, hydrateFromLocalStorage } from "./util";
 const apiKey = process.env.REACT_APP_API_KEY;
 const apiURL = "https://www.omdbapi.com";
 
-const resourceName = {
-  singular: "movie",
-  plural: "movies",
-};
-
 /**
  *
  * @param {string} query Search query
@@ -58,6 +53,11 @@ function App() {
   const [unnominatedToastActive, setUnnominatedToastActive] = useState(false);
   const [displayBanner, setDisplayBanner] = useState(false);
 
+  const resourceName = {
+    singular: "movie",
+    plural: "movies",
+  };
+
   const nominate = (movie) => {
     // check to see if this is the 5th nominated movie
     if (nominated.length === 4) {
@@ -73,12 +73,21 @@ function App() {
     setNominatedToastActive(true);
   };
 
+  /**
+   * Checks to see if a movie is already nominated
+   * @param {string} imdbID - IMDB ID to check for
+   */
   const isMovieNominated = (imdbID) => {
     return nominatedIMDB.filter((id) => id === imdbID).length > 0;
   };
 
-  // unnominates (denominates?) a movie
+  /**
+   * unnominates (denominates?) a movie
+   * @param {any>} movie Movie object
+   */
   const unnominate = (movie) => {
+    
+    // filter out the movie
     setNominated(
       nominated.filter(
         (nominatedMovie) => nominatedMovie.imdbID !== movie.imdbID
@@ -87,21 +96,27 @@ function App() {
     setNominatedIMBD(
       nominatedIMDB.filter((nominatedID) => nominatedID !== movie.imdbID)
     );
-
+    
+    // show a toast or two
     setUnnominatedToastActive(true);
   };
 
+  // when the search query changes, update state and reset the page counter
   const handleSearchQueryChange = useCallback((value) => {
     setSearchQuery(value);
     setSearchQueryPage(1);
   }, []);
 
+  /**
+   * Increments the page count by an integer amount
+   * @param {number} step Incremented step
+   */
   const incrementPage = (step = 1) => {
     setSearchQueryPage(searchQueryPage + step);
   };
 
   /**
-   *
+   * Helper function to render a movie ResourceItem
    * @param {any} movie Movie object
    */
   const renderMovie = (movie) => {
@@ -139,7 +154,7 @@ function App() {
   };
 
   /**
-   *
+   * Helper function to render the nominated movie ResourceItem
    * @param {any} movie Movie object
    */
   const renderNominatedMovie = (movie) => {
@@ -171,21 +186,26 @@ function App() {
     );
   };
 
-  // hydrates state with local storage on load
+  // hydrates state with local storage on page load
   useEffect(() => {
     setNominated(hydrateFromLocalStorage("nominated") || []);
     setNominatedIMBD(hydrateFromLocalStorage("nominatedIMDB") || []);
   }, []);
 
-  // caches state in local storage
-  // this was put after hydration so it doesn't override localstorage with an empty array
+  /**
+   * Caches state in local storage when state is changed
+   * This happens after hydration so it doesn't override the
+   * values in local storage with empty arrays
+   */
   useEffect(() => {
     cacheToLocalStorage("nominated", nominated);
     cacheToLocalStorage("nominatedIMDB", nominatedIMDB);
   }, [nominated, nominatedIMDB]);
 
-  // dynamically fetches new movies based on search
-  // this should only run when a new search query is created
+  /**
+   * Fetches new movies when a new search is made
+   * This effect should only run when search is changed, not when the page # is changed
+   */
   useEffect(() => {
     const getSearchResults = async () => {
       setSearchLoading(true);
@@ -227,7 +247,7 @@ function App() {
 
     getSearchResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, searchQueryPage]);
+  }, [searchQueryPage]);
 
   const filterControl = (
     <TextField
