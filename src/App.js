@@ -83,10 +83,9 @@ function App() {
 
   /**
    * unnominates (denominates?) a movie
-   * @param {any>} movie Movie object
+   * @param {any} movie Movie object
    */
   const unnominate = (movie) => {
-    
     // filter out the movie
     setNominated(
       nominated.filter(
@@ -96,7 +95,7 @@ function App() {
     setNominatedIMBD(
       nominatedIMDB.filter((nominatedID) => nominatedID !== movie.imdbID)
     );
-    
+
     // show a toast or two
     setUnnominatedToastActive(true);
   };
@@ -204,12 +203,14 @@ function App() {
 
   /**
    * Fetches new movies when a new search is made
-   * This effect should only run when search is changed, not when the page # is changed
+   * This effect should only call the API when search is changed, not when the page # is changed
    */
   useEffect(() => {
     const getSearchResults = async () => {
+      // set the ResourceList to loading when fetching
       setSearchLoading(true);
       const movieSearchResults = await searchMovies(searchQuery);
+      // if search results are returned
       if (movieSearchResults.Search) {
         setNumMovies(movieSearchResults.totalResults);
         // completely sets the state to the new search
@@ -219,21 +220,28 @@ function App() {
         // TODO: more complex error handling for various error states
         setMovies([]);
       }
+
+      // stop loading when data is fetched
       setSearchLoading(false);
     };
 
     getSearchResults();
   }, [searchQuery]);
 
-  // this watches the `searchQueryPage` state for changes
+  /**
+   * Fetches new movies when the search page is changed
+   * This effect should only call the API when pagination is changed
+   */
   useEffect(() => {
     // if changed, we grab the results and append them to the current movies state
     const getSearchResults = async () => {
+      // set the ResourceList to loading when fetching
       setSearchLoading(true);
       const movieSearchResults = await searchMovies(
         searchQuery,
         searchQueryPage
       );
+      // if search results are returned
       if (movieSearchResults.Search) {
         setNumMovies(movieSearchResults.totalResults);
         setMovies([...movies, ...movieSearchResults.Search]);
@@ -242,6 +250,7 @@ function App() {
         // TODO: more complex error handling for various error states
         setMovies([]);
       }
+      // stop loading when data is fetched
       setSearchLoading(false);
     };
 
@@ -262,12 +271,17 @@ function App() {
     />
   );
 
+  /**
+   * Slightly clunky
+   * This shows a toast when a movie is nominated
+   */
   const nominatedToast = nominatedToastActive ? (
     <Toast
       content="Movie nominated"
       action={{
         content: "Undo",
         onAction: () => {
+          // literally just removes the last movie nominated
           unnominate(nominated[nominated.length - 1]);
           setNominatedToastActive(false);
         },
@@ -277,6 +291,10 @@ function App() {
     />
   ) : null;
 
+  /**
+   * Still clunky
+   * Shows a toast when a movie is unnominated
+   */
   const unnominatedToast = unnominatedToastActive ? (
     <Toast
       content="Movie unnominated"
@@ -285,6 +303,10 @@ function App() {
     />
   ) : null;
 
+  /**
+   * The "pagination" (really infinite "scroll") footer component
+   * Button is automatically disabled when limit is reached
+   */
   const PaginationFooter = () => {
     let maxPages = Math.ceil(numMovies / 10); // gets the maximum amount of pages available for the search
 
@@ -305,6 +327,10 @@ function App() {
     return null;
   };
 
+  /**
+   * Helper function to render the nomination banner
+   * Banner appears when limit of 5 nominations is reached
+   */
   const renderNominationBanner = () => {
     if (displayBanner) {
       return (
