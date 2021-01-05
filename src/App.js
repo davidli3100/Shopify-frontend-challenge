@@ -373,10 +373,12 @@ function App() {
             </Layout.Section>
             <Layout.Section secondary>
               <Stack vertical spacing="tight">
-                <Heading>
-                  Nominated Movies{" "}
-                  <Badge status="info">{nominated.length}</Badge>
-                </Heading>
+                <div className="nominated-heading">
+                  <Heading>
+                    Nominated Movies{" "}
+                    <Badge status="info">{nominated.length}</Badge>
+                  </Heading>
+                </div>
                 <ResourceList
                   resourceName={resourceName}
                   emptyState={<EmptyNominations />}
