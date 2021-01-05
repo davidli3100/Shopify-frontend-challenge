@@ -14,10 +14,12 @@ import {
   Stack,
   Pagination,
   EmptyState,
+  Button,
 } from "@shopify/polaris";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import EmptyNominations from "./components/EmptyNominations";
+import { cacheToLocalStorage, hydrateFromLocalStorage } from "./util";
 
 const apiKey = process.env.REACT_APP_API_KEY;
 const apiURL = "http://www.omdbapi.com";
@@ -50,6 +52,7 @@ function App() {
   const [movies, setMovies] = useState([]);
   const [numMovies, setNumMovies] = useState(0);
   const [searchQuery, setSearchQuery] = useState("La La Land"); // set a default search query, La La Land was surprisingly good
+  const [searchQueryPage, setSearchQueryPage] = useState(1); // the page we're currently on
   const [nominated, setNominated] = useState([]);
   const [nominatedIMDB, setNominatedIMBD] = useState([]); // we use this state to quickly check to see if a movie has been nominated
   const [searchLoading, setSearchLoading] = useState(false);
@@ -66,6 +69,8 @@ function App() {
     // set the new nomination into state
     setNominatedIMBD([...nominatedIMDB, movie.imdbID]);
     setNominated([...nominated, movie]);
+
+    // show a toast to let users know that their nomination has been saved
     setToastActive(true);
   };
 
@@ -85,10 +90,14 @@ function App() {
     );
   };
 
-  const handleSearchQueryChange = useCallback(
-    (value) => setSearchQuery(value),
-    []
-  );
+  const handleSearchQueryChange = useCallback((value) => {
+    setSearchQuery(value);
+    setSearchQueryPage(1);
+  }, []);
+
+  const incrementPage = (step = 1) => {
+    setSearchQueryPage(searchQueryPage + step);
+  };
 
   /**
    *
@@ -158,19 +167,60 @@ function App() {
     );
   };
 
+  // hydrates state with local storage on load
+  useEffect(() => {
+    setNominated(hydrateFromLocalStorage("nominated") || []);
+    setNominatedIMBD(hydrateFromLocalStorage("nominatedIMDB") || []);
+  }, []);
+
+  // caches state in local storage
+  // this was put after hydration so it doesn't override localstorage with an empty array
+  useEffect(() => {
+    cacheToLocalStorage("nominated", nominated);
+    cacheToLocalStorage("nominatedIMDB", nominatedIMDB);
+  }, [nominated, nominatedIMDB]);
+
+  // dynamically fetches new movies based on search
   useEffect(() => {
     const getSearchResults = async () => {
       setSearchLoading(true);
-      const movieSearchResults = await searchMovies(searchQuery);
+      const movieSearchResults = await searchMovies(
+        searchQuery
+      );
       if (movieSearchResults.Search) {
         setNumMovies(movieSearchResults.totalResults);
         setMovies(movieSearchResults.Search);
+      } else if (movieSearchResults.Response === "False") {
+        // something went wrong
+        // TODO: more complex error handling for various error states
+        setMovies([]);
       }
       setSearchLoading(false);
     };
 
     getSearchResults();
   }, [searchQuery]);
+
+  useEffect(() => {
+    const getSearchResults = async () => {
+      setSearchLoading(true);
+      const movieSearchResults = await searchMovies(
+        searchQuery,
+        searchQueryPage
+      );
+      if (movieSearchResults.Search) {
+        setNumMovies(movieSearchResults.totalResults);
+        setMovies([...movies, ...movieSearchResults.Search]);
+      } else if (movieSearchResults.Response === "False") {
+        // something went wrong
+        // TODO: more complex error handling for various error states
+        setMovies([]);
+      }
+      setSearchLoading(false);
+    };
+
+    getSearchResults()
+  }, [searchQuery, searchQueryPage])
 
   const filterControl = (
     <TextField
@@ -199,6 +249,22 @@ function App() {
       onDismiss={() => setToastActive(false)}
     />
   ) : null;
+
+  const PaginationFooter = () => {
+    let maxPages = Math.ceil(numMovies / 10); // gets the maximum amount of pages available for the search
+    console.log(maxPages === maxPages)
+    return (
+      <div className="movies-pagination">
+        <Button
+          primary
+          disabled={searchQueryPage === maxPages}
+          onClick={() => incrementPage(1)}
+        >
+          Load More
+        </Button>
+      </div>
+    );
+  };
 
   const renderNominationBanner = () => {
     if (displayBanner) {
@@ -233,18 +299,7 @@ function App() {
                   // definitely not semantically correct - it'll do though
                   filterControl={filterControl}
                 />
-                <div className="movies-pagination">
-                  <Pagination
-                    hasPrevious
-                    onPrevious={() => {
-                      console.log("Previous");
-                    }}
-                    hasNext
-                    onNext={() => {
-                      console.log("Next");
-                    }}
-                  />
-                </div>
+                <PaginationFooter />
               </Card>
             </Layout.Section>
             <Layout.Section secondary>
