@@ -20,7 +20,7 @@ import EmptyNominations from "./components/EmptyNominations";
 import { cacheToLocalStorage, hydrateFromLocalStorage } from "./util";
 
 const apiKey = process.env.REACT_APP_API_KEY;
-const apiURL = "http://www.omdbapi.com";
+const apiURL = "https://www.omdbapi.com";
 
 const resourceName = {
   singular: "movie",
