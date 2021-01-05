@@ -5,13 +5,19 @@ import {
   Page,
   ResourceItem,
   ResourceList,
-  Title,
   TextField,
   Thumbnail,
   DisplayText,
+  Toast,
+  Frame,
+  Banner,
+  Stack,
+  Pagination,
+  EmptyState,
 } from "@shopify/polaris";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
+import EmptyNominations from "./components/EmptyNominations";
 
 const apiKey = process.env.REACT_APP_API_KEY;
 const apiURL = "http://www.omdbapi.com";
@@ -42,18 +48,41 @@ const searchMovies = async (query, page = 1) => {
 
 function App() {
   const [movies, setMovies] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [numMovies, setNumMovies] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("La La Land"); // set a default search query, La La Land was surprisingly good
   const [nominated, setNominated] = useState([]);
-  const [nominatedIMDB, setNominatedIMBD] = useState([]);
+  const [nominatedIMDB, setNominatedIMBD] = useState([]); // we use this state to quickly check to see if a movie has been nominated
   const [searchLoading, setSearchLoading] = useState(false);
+  const [toastActive, setToastActive] = useState(false);
+  const [displayBanner, setDisplayBanner] = useState(false);
 
   const nominate = (movie) => {
+    // check to see if this is the 5th nominated movie
+    if (nominated.length === 4) {
+      // display the banner
+      setDisplayBanner(true);
+    }
+
+    // set the new nomination into state
     setNominatedIMBD([...nominatedIMDB, movie.imdbID]);
     setNominated([...nominated, movie]);
+    setToastActive(true);
   };
 
   const isMovieNominated = (imdbID) => {
     return nominatedIMDB.filter((id) => id === imdbID).length > 0;
+  };
+
+  // unnominates (denominates?) a movie
+  const unNominate = (movie) => {
+    setNominated(
+      nominated.filter(
+        (nominatedMovie) => nominatedMovie.imdbID !== movie.imdbID
+      )
+    );
+    setNominatedIMBD(
+      nominatedIMDB.filter((nominatedID) => nominatedID !== movie.imdbID)
+    );
   };
 
   const handleSearchQueryChange = useCallback(
@@ -96,11 +125,45 @@ function App() {
     );
   };
 
+  /**
+   *
+   * @param {any} movie Movie object
+   */
+  const renderNominatedMovie = (movie) => {
+    const { Poster, Title, Year, imdbID } = movie;
+    const media = (
+      <Thumbnail
+        source={Poster}
+        size="large"
+        alt={`Poster for the movie ${Title}`}
+      />
+    );
+
+    const shortcutActions = {
+      content: "Remove",
+      accessibilityLabel: `Remove ${Title} from nominated list`,
+      onAction: () => unNominate(movie),
+    };
+
+    return (
+      <ResourceItem
+        media={media}
+        id={imdbID}
+        accessibilityLabel={`${Title}`}
+        shortcutActions={shortcutActions}
+      >
+        <Heading element="h3">{Title}</Heading>
+        <p>{Year}</p>
+      </ResourceItem>
+    );
+  };
+
   useEffect(() => {
     const getSearchResults = async () => {
       setSearchLoading(true);
       const movieSearchResults = await searchMovies(searchQuery);
       if (movieSearchResults.Search) {
+        setNumMovies(movieSearchResults.totalResults);
         setMovies(movieSearchResults.Search);
       }
       setSearchLoading(false);
@@ -122,32 +185,84 @@ function App() {
     />
   );
 
+  const toastMarkup = toastActive ? (
+    <Toast
+      content="Movie nominated"
+      action={{
+        content: "Undo",
+        onAction: () => {
+          unNominate(nominated[nominated.length - 1]);
+          setToastActive(false);
+        },
+      }}
+      duration={10000}
+      onDismiss={() => setToastActive(false)}
+    />
+  ) : null;
+
+  const renderNominationBanner = () => {
+    if (displayBanner) {
+      return (
+        <Banner
+          title="You've nominated five movies!"
+          status="success"
+          onDismiss={() => {
+            setDisplayBanner(false);
+          }}
+        />
+      );
+    }
+  };
+
   return (
-    <Page title="ShopifyDB" separator>
-      <Layout>
-        <Layout.Section>
-          <Card>
-            <ResourceList
-              resourceName={resourceName}
-              items={movies}
-              renderItem={renderMovie}
-              loading={searchLoading}
-              // this part is a little janky because I'm just using the filter control for better UI
-              // definitely not semantically correct - it'll do though
-              filterControl={filterControl}
-            />
-          </Card>
-        </Layout.Section>
-        <Layout.Section secondary>
-          <DisplayText size="medium">Nominated Movies</DisplayText>
-          <ResourceList
-            resourceName={resourceName}
-            items={nominated}
-            renderItem={renderMovie}
-          />
-        </Layout.Section>
-      </Layout>
-    </Page>
+    <Frame>
+      <Page title="ShopifyDB" separator>
+        <Stack vertical spacing="extraLoose">
+          {renderNominationBanner()}
+          <Layout>
+            <Layout.Section>
+              <Card>
+                <ResourceList
+                  showHeader
+                  totalItemsCount={numMovies}
+                  resourceName={resourceName}
+                  items={movies}
+                  renderItem={renderMovie}
+                  loading={searchLoading}
+                  // this part is a little janky because I'm just using the filter control for better UI
+                  // definitely not semantically correct - it'll do though
+                  filterControl={filterControl}
+                />
+                <div className="movies-pagination">
+                  <Pagination
+                    hasPrevious
+                    onPrevious={() => {
+                      console.log("Previous");
+                    }}
+                    hasNext
+                    onNext={() => {
+                      console.log("Next");
+                    }}
+                  />
+                </div>
+              </Card>
+            </Layout.Section>
+            <Layout.Section secondary>
+              <Stack vertical spacing="tight">
+                <Heading>Nominated Movies</Heading>
+                <ResourceList
+                  resourceName={resourceName}
+                  emptyState={<EmptyNominations />}
+                  items={nominated}
+                  renderItem={renderNominatedMovie}
+                />
+              </Stack>
+            </Layout.Section>
+          </Layout>
+        </Stack>
+        {toastMarkup}
+      </Page>
+    </Frame>
   );
 }
 
