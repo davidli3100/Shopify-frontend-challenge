@@ -15,6 +15,7 @@ import {
   Pagination,
   EmptyState,
   Button,
+  Badge,
 } from "@shopify/polaris";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
@@ -51,12 +52,13 @@ const searchMovies = async (query, page = 1) => {
 function App() {
   const [movies, setMovies] = useState([]);
   const [numMovies, setNumMovies] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("La La Land"); // set a default search query, La La Land was surprisingly good
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchQueryPage, setSearchQueryPage] = useState(1); // the page we're currently on
   const [nominated, setNominated] = useState([]);
   const [nominatedIMDB, setNominatedIMBD] = useState([]); // we use this state to quickly check to see if a movie has been nominated
   const [searchLoading, setSearchLoading] = useState(false);
-  const [toastActive, setToastActive] = useState(false);
+  const [nominatedToastActive, setNominatedToastActive] = useState(false);
+  const [unnominatedToastActive, setUnnominatedToastActive] = useState(false);
   const [displayBanner, setDisplayBanner] = useState(false);
 
   const nominate = (movie) => {
@@ -71,7 +73,7 @@ function App() {
     setNominated([...nominated, movie]);
 
     // show a toast to let users know that their nomination has been saved
-    setToastActive(true);
+    setNominatedToastActive(true);
   };
 
   const isMovieNominated = (imdbID) => {
@@ -79,7 +81,7 @@ function App() {
   };
 
   // unnominates (denominates?) a movie
-  const unNominate = (movie) => {
+  const unnominate = (movie) => {
     setNominated(
       nominated.filter(
         (nominatedMovie) => nominatedMovie.imdbID !== movie.imdbID
@@ -88,6 +90,8 @@ function App() {
     setNominatedIMBD(
       nominatedIMDB.filter((nominatedID) => nominatedID !== movie.imdbID)
     );
+
+    setUnnominatedToastActive(true);
   };
 
   const handleSearchQueryChange = useCallback((value) => {
@@ -113,18 +117,21 @@ function App() {
       />
     );
 
-    const shortcutActions = isMovieNominated(imdbID)
-      ? null
-      : {
-          content: "Nominate",
-          accessibilityLabel: `Nominate ${Title}`,
-          onAction: () => nominate(movie),
-        };
+    // disables nominations if the movie is nominated or if the max amount is reached
+    const shortcutActions =
+      isMovieNominated(imdbID) || nominated.length >= 5
+        ? null
+        : {
+            content: "Nominate",
+            accessibilityLabel: `Nominate ${Title}`,
+            onAction: () => nominate(movie),
+          };
 
     return (
       <ResourceItem
         media={media}
         id={imdbID}
+        url={`https://imdb.com/title/${imdbID}`}
         accessibilityLabel={`${Title}`}
         shortcutActions={shortcutActions}
       >
@@ -151,7 +158,7 @@ function App() {
     const shortcutActions = {
       content: "Remove",
       accessibilityLabel: `Remove ${Title} from nominated list`,
-      onAction: () => unNominate(movie),
+      onAction: () => unnominate(movie),
     };
 
     return (
@@ -181,14 +188,14 @@ function App() {
   }, [nominated, nominatedIMDB]);
 
   // dynamically fetches new movies based on search
+  // this should only run when a new search query is created
   useEffect(() => {
     const getSearchResults = async () => {
       setSearchLoading(true);
-      const movieSearchResults = await searchMovies(
-        searchQuery
-      );
+      const movieSearchResults = await searchMovies(searchQuery);
       if (movieSearchResults.Search) {
         setNumMovies(movieSearchResults.totalResults);
+        // completely sets the state to the new search
         setMovies(movieSearchResults.Search);
       } else if (movieSearchResults.Response === "False") {
         // something went wrong
@@ -201,7 +208,9 @@ function App() {
     getSearchResults();
   }, [searchQuery]);
 
+  // this watches the `searchQueryPage` state for changes
   useEffect(() => {
+    // if changed, we grab the results and append them to the current movies state
     const getSearchResults = async () => {
       setSearchLoading(true);
       const movieSearchResults = await searchMovies(
@@ -219,8 +228,9 @@ function App() {
       setSearchLoading(false);
     };
 
-    getSearchResults()
-  }, [searchQuery, searchQueryPage])
+    getSearchResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, searchQueryPage]);
 
   const filterControl = (
     <TextField
@@ -235,35 +245,47 @@ function App() {
     />
   );
 
-  const toastMarkup = toastActive ? (
+  const nominatedToast = nominatedToastActive ? (
     <Toast
       content="Movie nominated"
       action={{
         content: "Undo",
         onAction: () => {
-          unNominate(nominated[nominated.length - 1]);
-          setToastActive(false);
+          unnominate(nominated[nominated.length - 1]);
+          setNominatedToastActive(false);
         },
       }}
       duration={10000}
-      onDismiss={() => setToastActive(false)}
+      onDismiss={() => setNominatedToastActive(false)}
+    />
+  ) : null;
+
+  const unnominatedToast = unnominatedToastActive ? (
+    <Toast
+      content="Movie unnominated"
+      duration={10000}
+      onDismiss={() => setUnnominatedToastActive(false)}
     />
   ) : null;
 
   const PaginationFooter = () => {
     let maxPages = Math.ceil(numMovies / 10); // gets the maximum amount of pages available for the search
-    console.log(maxPages === maxPages)
-    return (
-      <div className="movies-pagination">
-        <Button
-          primary
-          disabled={searchQueryPage === maxPages}
-          onClick={() => incrementPage(1)}
-        >
-          Load More
-        </Button>
-      </div>
-    );
+
+    if (movies.length > 0) {
+      return (
+        <div className="movies-pagination">
+          <Button
+            primary
+            disabled={searchQueryPage === maxPages}
+            onClick={() => incrementPage(1)}
+          >
+            Load More
+          </Button>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   const renderNominationBanner = () => {
@@ -275,7 +297,12 @@ function App() {
           onDismiss={() => {
             setDisplayBanner(false);
           }}
-        />
+        >
+          <p>
+            Please remove a nominated movie if you would like to nominate
+            another movie.
+          </p>
+        </Banner>
       );
     }
   };
@@ -304,7 +331,10 @@ function App() {
             </Layout.Section>
             <Layout.Section secondary>
               <Stack vertical spacing="tight">
-                <Heading>Nominated Movies</Heading>
+                <Heading>
+                  Nominated Movies{" "}
+                  <Badge status="info">{nominated.length}</Badge>
+                </Heading>
                 <ResourceList
                   resourceName={resourceName}
                   emptyState={<EmptyNominations />}
@@ -315,7 +345,8 @@ function App() {
             </Layout.Section>
           </Layout>
         </Stack>
-        {toastMarkup}
+        {nominatedToast}
+        {unnominatedToast}
       </Page>
     </Frame>
   );
