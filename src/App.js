@@ -142,7 +142,6 @@ function App() {
       <ResourceItem
         media={media}
         id={imdbID}
-        url={`https://imdb.com/title/${imdbID}`}
         accessibilityLabel={`${Title}`}
         shortcutActions={shortcutActions}
       >
