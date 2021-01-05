@@ -5,10 +5,10 @@ import {
   Page,
   ResourceItem,
   ResourceList,
-  TextContainer,
+  Title,
   TextField,
-  TextStyle,
   Thumbnail,
+  DisplayText,
 } from "@shopify/polaris";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
@@ -45,6 +45,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [nominated, setNominated] = useState([]);
   const [nominatedIMDB, setNominatedIMBD] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const nominate = (movie) => {
     setNominatedIMBD([...nominatedIMDB, movie.imdbID]);
@@ -97,10 +98,12 @@ function App() {
 
   useEffect(() => {
     const getSearchResults = async () => {
+      setSearchLoading(true);
       const movieSearchResults = await searchMovies(searchQuery);
       if (movieSearchResults.Search) {
         setMovies(movieSearchResults.Search);
       }
+      setSearchLoading(false);
     };
 
     getSearchResults();
@@ -128,14 +131,21 @@ function App() {
               resourceName={resourceName}
               items={movies}
               renderItem={renderMovie}
-              loading={movies.length < 1}
+              loading={searchLoading}
               // this part is a little janky because I'm just using the filter control for better UI
               // definitely not semantically correct - it'll do though
               filterControl={filterControl}
             />
           </Card>
         </Layout.Section>
-        <Layout.Section secondary>Nominated</Layout.Section>
+        <Layout.Section secondary>
+          <DisplayText size="medium">Nominated Movies</DisplayText>
+          <ResourceList
+            resourceName={resourceName}
+            items={nominated}
+            renderItem={renderMovie}
+          />
+        </Layout.Section>
       </Layout>
     </Page>
   );
