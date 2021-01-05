@@ -144,6 +144,8 @@ function App() {
         id={imdbID}
         accessibilityLabel={`${Title}`}
         shortcutActions={shortcutActions}
+        // mainly for mobile users - the actions built into ResourceItem rely on having a mouse to hover
+        onClick={() => nominate(movie)}
       >
         <Heading element="h3">{Title}</Heading>
         <p>{Year}</p>
