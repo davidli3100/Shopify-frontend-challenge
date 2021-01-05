@@ -7,13 +7,10 @@ import {
   ResourceList,
   TextField,
   Thumbnail,
-  DisplayText,
   Toast,
   Frame,
   Banner,
   Stack,
-  Pagination,
-  EmptyState,
   Button,
   Badge,
 } from "@shopify/polaris";
