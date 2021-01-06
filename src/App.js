@@ -19,7 +19,7 @@ import "./App.css";
 import EmptyNominations from "./components/EmptyNominations";
 import { cacheToLocalStorage, hydrateFromLocalStorage } from "./util";
 
-const apiKey = process.env.REACT_APP_API_KEY;
+const apiKey = process.env.REACT_APP_API_KEY; // protect yo creds!
 const apiURL = "https://www.omdbapi.com";
 
 // TODO: Migrate to TypeScript so we can use an interface to constrain movies to a movie type
