@@ -1,3 +1,4 @@
+// simple component for empty states
 const EmptyNominations = () => (
   <div className="empty-state nominations">
     Search for a movie to nominate it!

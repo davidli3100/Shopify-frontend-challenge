@@ -1,5 +1,5 @@
 /**
- *
+ * Caches object to localstorage
  * @param {string} key Key to save to
  * @param {any} content Raw content
  */
@@ -8,7 +8,7 @@ export const cacheToLocalStorage = (key, content) => {
 };
 
 /**
- *
+ * Fetches and parses an object from localstorage
  * @param {string} key Key to fetch from
  */
 export const hydrateFromLocalStorage = (key) => {
