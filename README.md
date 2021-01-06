@@ -22,4 +22,4 @@ There's a few things that could be improved on with more time
  - Allowing users to save and share their nomination lists using a social login provider and some sort of database (Firestore)
  - The Polaris `ResourceItem` component's `shortcutActions` rely on a hover state to show the actions unless they are persisted. It's not possible for a touch device user to hover, thus, these actions are inaccessible to users on touch devices
 	 - I ended up using a button in the `ResouceItem` itself rather than the built-in `shortcutActions` so that they'd be accessible on mobile and styled appropriately 
- - Cleaning up `app.js` in if the project were to have more pages/components
+ - Cleaning up `app.js` if the project were to have more pages/components
