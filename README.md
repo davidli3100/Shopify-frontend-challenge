@@ -1,7 +1,7 @@
 
 # The Shoppies
 ![Screenshot of The Shoppies](https://i.imgur.com/F41c4uS.png)
-### Built for the UX Developer Intern & Web Developer Intern Challenge - Summer 2021
+### Built for the Shopify UX Developer Intern & Web Developer Intern Challenge - Summer 2021
 
 [https://shopify-frontend-challenge.netlify.app/](https://shopify-frontend-challenge.netlify.app/)
 
