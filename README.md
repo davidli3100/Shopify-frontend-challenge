@@ -17,7 +17,7 @@
 
 ### Room for Improvement
 There's a few things that could be improved on with more time
-
+ - Not super necessary at this scale, but state management using Redux or even just Context would be a plus
  - Using Typescript instead of plain JS for more type safety
  - Allowing users to save and share their nomination lists using a social login provider and some sort of database (Firestore)
  - The Polaris `ResourceItem` component's `shortcutActions` rely on a hover state to show the actions unless they are persisted. It's not possible for a touch device user to hover, thus, these actions are inaccessible to users on touch devices
