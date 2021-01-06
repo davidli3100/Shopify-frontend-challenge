@@ -370,7 +370,7 @@ function App() {
 
   return (
     <Frame>
-      <Page title="ShopifyDB" separator>
+      <Page title="The Shoppies" separator>
         <Stack vertical spacing="extraLoose">
           {renderNominationBanner()}
           <Layout>
