@@ -13,9 +13,7 @@ import {
   Stack,
   Button,
   Badge,
-  Icon,
 } from "@shopify/polaris";
-import { MobileCancelMajor } from "@shopify/polaris-icons";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import EmptyNominations from "./components/EmptyNominations";
@@ -159,12 +157,6 @@ function App() {
         alt={`Poster for the movie ${Title}`}
       />
     );
-
-    const shortcutActions = {
-      content: "Remove",
-      accessibilityLabel: `Remove ${Title} from nominated list`,
-      onAction: () => unnominate(movie),
-    };
 
     return (
       <ResourceItem media={media} id={imdbID} accessibilityLabel={`${Title}`}>
