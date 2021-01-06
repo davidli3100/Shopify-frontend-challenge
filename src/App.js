@@ -13,7 +13,9 @@ import {
   Stack,
   Button,
   Badge,
+  Icon,
 } from "@shopify/polaris";
+import { MobileCancelMajor } from "@shopify/polaris-icons";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import EmptyNominations from "./components/EmptyNominations";
@@ -59,12 +61,6 @@ function App() {
   };
 
   const nominate = (movie) => {
-    // check to see if this is the 5th nominated movie
-    if (nominated.length === 4) {
-      // display the banner
-      setDisplayBanner(true);
-    }
-
     // set the new nomination into state
     setNominatedIMBD([...nominatedIMDB, movie.imdbID]);
     setNominated([...nominated, movie]);
@@ -128,27 +124,24 @@ function App() {
       />
     );
 
-    // disables nominations if the movie is nominated or if the max amount is reached
-    const shortcutActions =
-      isMovieNominated(imdbID) || nominated.length >= 5
-        ? null
-        : {
-            content: "Nominate",
-            accessibilityLabel: `Nominate ${Title}`,
-            onAction: () => nominate(movie),
-          };
-
     return (
-      <ResourceItem
-        media={media}
-        id={imdbID}
-        accessibilityLabel={`${Title}`}
-        shortcutActions={shortcutActions}
-        // mainly for mobile users - the actions built into ResourceItem rely on having a mouse to hover
-        onClick={() => nominate(movie)}
-      >
-        <Heading element="h3">{Title}</Heading>
-        <p>{Year}</p>
+      <ResourceItem media={media} id={imdbID} accessibilityLabel={`${Title}`}>
+        <div className="movie-card-container">
+          <Stack>
+            <Stack.Item fill>
+              <Heading element="h3">{Title}</Heading>
+              <p>{Year}</p>
+            </Stack.Item>
+            {/* disables nominations if the movie is nominated or if the max amount is reached */}
+            {!isMovieNominated(imdbID) && nominated.length < 5 && (
+              <Stack.Item>
+                <Button onClick={() => nominate(movie)} size="slim" outline>
+                  Nominate
+                </Button>
+              </Stack.Item>
+            )}
+          </Stack>
+        </div>
       </ResourceItem>
     );
   };
@@ -174,14 +167,18 @@ function App() {
     };
 
     return (
-      <ResourceItem
-        media={media}
-        id={imdbID}
-        accessibilityLabel={`${Title}`}
-        shortcutActions={shortcutActions}
-      >
-        <Heading element="h3">{Title}</Heading>
-        <p>{Year}</p>
+      <ResourceItem media={media} id={imdbID} accessibilityLabel={`${Title}`}>
+        <Stack vertical>
+          <Stack.Item>
+            <Heading element="h3">{Title}</Heading>
+            <p>{Year}</p>
+          </Stack.Item>
+          <Stack.Item>
+            <Button onClick={() => unnominate(movie)} plain>
+              Remove
+            </Button>
+          </Stack.Item>
+        </Stack>
       </ResourceItem>
     );
   };
@@ -201,6 +198,23 @@ function App() {
     cacheToLocalStorage("nominated", nominated);
     cacheToLocalStorage("nominatedIMDB", nominatedIMDB);
   }, [nominated, nominatedIMDB]);
+
+  /**
+   * Displays the max nominations banner when 5 movies are nominated
+   * Alternatively, automatically closes it when there's still
+   * space left for more nominations
+   * 
+   * Effect watches the nominated state
+   */
+  useEffect(() => {
+    // check to see if this is the 5th nominated movie
+    if (nominated.length === 5) {
+      // display the banner
+      setDisplayBanner(true);
+    } else {
+      setDisplayBanner(false)
+    }
+  }, [nominated]);
 
   /**
    * Fetches new movies when a new search is made

@@ -22,4 +22,8 @@
   .nominated-heading {
     padding: 0 1.5rem;
   }
+
+  .movie-card-container .Polaris-Stack {
+    flex-direction: column;
+  }
 }
