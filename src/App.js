@@ -22,8 +22,10 @@ import { cacheToLocalStorage, hydrateFromLocalStorage } from "./util";
 const apiKey = process.env.REACT_APP_API_KEY;
 const apiURL = "https://www.omdbapi.com";
 
+// TODO: Migrate to TypeScript so we can use an interface to constrain movies to a movie type
+
 /**
- *
+ * Searches for movies on OMDB given query parameters
  * @param {string} query Search query
  * @param {number} [page] Page to return (defaults to 1)
  */
@@ -42,22 +44,27 @@ const searchMovies = async (query, page = 1) => {
 };
 
 function App() {
-  const [movies, setMovies] = useState([]);
-  const [numMovies, setNumMovies] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [movies, setMovies] = useState([]); // all movies fetched
+  const [numMovies, setNumMovies] = useState(0); // total amount of results for a search
+  const [searchQuery, setSearchQuery] = useState(""); // search query
   const [searchQueryPage, setSearchQueryPage] = useState(1); // the page we're currently on
-  const [nominated, setNominated] = useState([]);
+  const [nominated, setNominated] = useState([]); // nominated movies
   const [nominatedIMDB, setNominatedIMBD] = useState([]); // we use this state to quickly check to see if a movie has been nominated
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [nominatedToastActive, setNominatedToastActive] = useState(false);
-  const [unnominatedToastActive, setUnnominatedToastActive] = useState(false);
-  const [displayBanner, setDisplayBanner] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false); // self-explanatory
+  const [nominatedToastActive, setNominatedToastActive] = useState(false); // state of nominated toast
+  const [unnominatedToastActive, setUnnominatedToastActive] = useState(false); // state of unnominated toast
+  const [displayBanner, setDisplayBanner] = useState(false); // state of max nominations banner
 
+  // used for the ResourceList component
   const resourceName = {
     singular: "movie",
     plural: "movies",
   };
 
+  /**
+   * Nominates a movie
+   * @param {any} movie Movie object
+   */
   const nominate = (movie) => {
     // set the new nomination into state
     setNominatedIMBD([...nominatedIMDB, movie.imdbID]);
@@ -76,7 +83,7 @@ function App() {
   };
 
   /**
-   * unnominates (denominates?) a movie
+   * Unnominates (denominates?) a movie
    * @param {any} movie Movie object
    */
   const unnominate = (movie) => {
@@ -262,6 +269,9 @@ function App() {
     };
 
     getSearchResults();
+
+    // we don't want exhaustive deps since 2 effects would run when the searchQuery is changed
+    // we only want this one to run when the page is changed and the searchQuery is the same
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQueryPage]);
 
@@ -397,6 +407,7 @@ function App() {
             </Layout.Section>
           </Layout>
         </Stack>
+        {/* Throw in the toast markups here */}
         {nominatedToast}
         {unnominatedToast}
       </Page>
